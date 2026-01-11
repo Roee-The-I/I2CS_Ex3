@@ -67,4 +67,20 @@ public class Ex3Algo implements PacManAlgo{
 		int ind = (int)(Math.random()*dirs.length);
 		return dirs[ind];
 	}
+    public int move(Game game) {
+        String pos = game.getPos(0);
+        pos = pos.replace("(", "").replace(")", "");
+        String[] parts = pos.split(",");
+        int x = Integer.parseInt(parts[0]);
+        int y = Integer.parseInt(parts[1]);
+        int[][] map = game.getGame(0);
+        int w = map.length;
+        int h = map[0].length;
+        int WALL = Game.getIntColor(java.awt.Color.BLUE, 0);
+        if (x + 1 < w && map[x + 1][y] != WALL) return Game.RIGHT;
+        if (y - 1 >= 0 && map[x][y - 1] != WALL) return Game.UP;
+        if (x - 1 >= 0 && map[x - 1][y] != WALL) return Game.LEFT;
+        if (y + 1 < h && map[x][y + 1] != WALL) return Game.DOWN;
+        return Game.STAY;
+    }
 }
