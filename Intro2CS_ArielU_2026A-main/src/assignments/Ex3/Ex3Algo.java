@@ -79,27 +79,29 @@ public class Ex3Algo implements PacManAlgo{
         int h = map[0].length;
         int WALL = Game.getIntColor(Color.BLUE, 0);
         int FOOD = Game.getIntColor(Color.PINK, 0);
-        int bestDir = Game.STAY;
+        if (isValid(game, map, x, y, lastDir, WALL)) {
+            int nx = x, ny = y;
+            if (lastDir == Game.RIGHT) nx++;
+            if (lastDir == Game.LEFT)  nx--;
+            if (lastDir == Game.UP)    ny--;
+            if (lastDir == Game.DOWN)  ny++;
+            if (nx >= 0 && ny >= 0 && nx < w && ny < h && map[nx][ny] == FOOD) {
+                return lastDir;
+            }
+        }
         int[] dirs = {Game.RIGHT, Game.UP, Game.LEFT, Game.DOWN};
         for (int dir : dirs) {
-            int nx = x, ny = y;
-            if (dir == Game.RIGHT) nx++;
-            if (dir == Game.LEFT)  nx--;
-            if (dir == Game.UP)    ny--;
-            if (dir == Game.DOWN)  ny++;
-            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-            if (map[nx][ny] == WALL) continue;
-            if (map[nx][ny] == FOOD) {
+            if (dir == opposite(lastDir)) continue;
+            if (isValid(game, map, x, y, dir, WALL)) {
                 lastDir = dir;
                 return dir;
             }
-            if (bestDir == Game.STAY && dir != opposite(lastDir)) {
-                bestDir = dir;
-            }
         }
-        if (bestDir != Game.STAY) {
-            lastDir = bestDir;
-            return bestDir;
+        for (int dir : dirs) {
+            if (isValid(game, map, x, y, dir, WALL)) {
+                lastDir = dir;
+                return dir;
+            }
         }
         return Game.STAY;
     }
