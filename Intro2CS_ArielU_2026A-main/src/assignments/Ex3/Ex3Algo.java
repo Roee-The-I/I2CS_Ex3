@@ -15,7 +15,8 @@ import java.awt.*;
  */
 public class Ex3Algo implements PacManAlgo{
 	private int _count;
-	public Ex3Algo() {_count=0;}
+    private int lastDir = Game.STAY;
+    public Ex3Algo() {_count=0;}
 	@Override
 	/**
 	 *  Add a short description for the algorithm as a String.
@@ -70,17 +71,51 @@ public class Ex3Algo implements PacManAlgo{
     public int move(Game game) {
         String pos = game.getPos(0);
         pos = pos.replace("(", "").replace(")", "");
-        String[] parts = pos.split(",");
-        int x = Integer.parseInt(parts[0]);
-        int y = Integer.parseInt(parts[1]);
+        String[] p = pos.split(",");
+        int x = Integer.parseInt(p[0]);
+        int y = Integer.parseInt(p[1]);
         int[][] map = game.getGame(0);
         int w = map.length;
         int h = map[0].length;
-        int WALL = Game.getIntColor(java.awt.Color.BLUE, 0);
-        if (x + 1 < w && map[x + 1][y] != WALL) return Game.RIGHT;
-        if (y - 1 >= 0 && map[x][y - 1] != WALL) return Game.UP;
-        if (x - 1 >= 0 && map[x - 1][y] != WALL) return Game.LEFT;
-        if (y + 1 < h && map[x][y + 1] != WALL) return Game.DOWN;
+        int WALL = Game.getIntColor(Color.BLUE, 0);
+        int FOOD = Game.getIntColor(Color.PINK, 0);
+        int bestDir = Game.STAY;
+        int[] dirs = {Game.RIGHT, Game.UP, Game.LEFT, Game.DOWN};
+        for (int dir : dirs) {
+            int nx = x, ny = y;
+            if (dir == Game.RIGHT) nx++;
+            if (dir == Game.LEFT)  nx--;
+            if (dir == Game.UP)    ny--;
+            if (dir == Game.DOWN)  ny++;
+            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+            if (map[nx][ny] == WALL) continue;
+            if (map[nx][ny] == FOOD) {
+                lastDir = dir;
+                return dir;
+            }
+            if (bestDir == Game.STAY && dir != opposite(lastDir)) {
+                bestDir = dir;
+            }
+        }
+        if (bestDir != Game.STAY) {
+            lastDir = bestDir;
+            return bestDir;
+        }
+        return Game.STAY;
+    }
+    private boolean isValid(Game game, int[][] map, int x, int y, int dir, int WALL) {
+        int newx = x, newy = y;
+        if (dir == Game.RIGHT) newx++;
+        if (dir == Game.LEFT)  newx--;
+        if (dir == Game.UP)    newy--;
+        if (dir == Game.DOWN)  newy++;
+        return newx >= 0 && newy >= 0 && newx < map.length && newy < map[0].length && map[newx][newy] != WALL;
+    }
+    private int opposite(int dir) {
+        if (dir == Game.UP) return Game.DOWN;
+        if (dir == Game.DOWN) return Game.UP;
+        if (dir == Game.LEFT) return Game.RIGHT;
+        if (dir == Game.RIGHT) return Game.LEFT;
         return Game.STAY;
     }
 }
