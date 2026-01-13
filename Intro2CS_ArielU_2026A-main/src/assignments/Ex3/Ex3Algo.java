@@ -73,21 +73,74 @@ public class Ex3Algo implements PacManAlgo{
         Map2D m = new Map(map);
 
         Index2D pac = getPacmanIndex(game);
+        Index2D ghost = getGhostIndex(game);
 
-        Index2D target = findClosestFood(m, map, pac);
-        if (target != null) {
+        int FOOD = Game.getIntColor(Color.PINK, 0);
+        int WALL = Game.getIntColor(Color.BLUE, 0);
+        boolean cyclic = false;
 
-            int WALL = Game.getIntColor(Color.BLUE, 0); // או הקבוע שלכם
-            boolean cyclic = false;
+        int px = pac.getX();
+        int py = pac.getY();
 
-            Pixel2D[] path = m.shortestPath(pac, target, WALL, cyclic);
+        int gx = ghost.getX();
+        int gy = ghost.getY();
 
-            if (path != null && path.length > 1) {
-                return directionFromTo(pac, (Index2D) path[1]);
+        int h = map.length;
+        int w = map[0].length;
+
+        int[] dx = {0, 1, 0, -1};
+        int[] dy = {-1, 0, 1, 0};
+
+        for (int k = 0; k < 4; k++) {
+            int nx = px + dx[k];
+            int ny = py + dy[k];
+
+            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+            if (map[ny][nx] == WALL) continue;
+            if (Math.abs(nx - gx) + Math.abs(ny - gy) <= 1) continue;
+
+            if (map[ny][nx] == FOOD) {
+                return directionFromTo(pac, new Index2D(nx, ny));
             }
         }
 
-        return fallbackMove(map, pac);
+        Map2D distFromPac = m.allDistance(pac, WALL, cyclic);
+
+        Index2D target = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                if (map[y][x] == FOOD) {
+                    int d = distFromPac.getPixel(x, y);
+                    if (d >= 0 && d < bestDist) {
+                        bestDist = d;
+                        target = new Index2D(x, y);
+                    }
+                }
+            }
+        }
+
+        if (target == null) return 0;
+
+        Map2D distFromFood = m.allDistance(target, WALL, cyclic);
+        int curDist = distFromFood.getPixel(px, py);
+
+        for (int k = 0; k < 4; k++) {
+            int nx = px + dx[k];
+            int ny = py + dy[k];
+
+            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
+            if (map[ny][nx] == WALL) continue;
+            if (Math.abs(nx - gx) + Math.abs(ny - gy) <= 1) continue;
+
+            int nd = distFromFood.getPixel(nx, ny);
+            if (nd >= 0 && nd < curDist) {
+                return directionFromTo(pac, new Index2D(nx, ny));
+            }
+        }
+
+        return 0;
     }
     private Index2D getPacmanIndex(Game game) {
         String pos = game.getPos(0);
@@ -95,6 +148,24 @@ public class Ex3Algo implements PacManAlgo{
         String[] p = pos.split(",");
         int x = Integer.parseInt(p[0]);
         int y = Integer.parseInt(p[1]);
+        return new Index2D(x, y);
+    }
+    private Index2D getGhostIndex(Game game) {
+
+        GhostCL[] gs = game.getGhosts(0);
+        if (gs == null || gs.length == 0 || gs[0] == null) return null;
+
+        String gpos = gs[0].getPos(0);
+        if (gpos == null) return null;
+
+        gpos = gpos.replace("(", "").replace(")", "").trim();
+        String[] p = gpos.split(",");
+
+        if (p.length < 2) return null;
+
+        int x = Integer.parseInt(p[0].trim());
+        int y = Integer.parseInt(p[1].trim());
+
         return new Index2D(x, y);
     }
     private Index2D findClosestFood(Map2D m, int[][] map, Index2D pac) {
