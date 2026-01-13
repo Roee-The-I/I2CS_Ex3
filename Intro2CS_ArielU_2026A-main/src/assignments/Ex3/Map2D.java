@@ -134,4 +134,12 @@ public interface Map2D {
 	 * @return a new map with all the shortest path distances from the starting point to each entry in this map.
 	 */
 	public Map2D allDistance(Pixel2D start, int obsColor);
+
+    /**
+     * BFS like shortest the computation based on iterative raster implementation of BFS, see:
+     * https://en.wikipedia.org/wiki/Breadth-first_search
+     */
+    Pixel2D[] shortestPath(Pixel2D p1, Pixel2D p2, int obsColor, boolean cyclic);
+
+    Map2D allDistance(Pixel2D start, int obsColor, boolean cyclic);
 }

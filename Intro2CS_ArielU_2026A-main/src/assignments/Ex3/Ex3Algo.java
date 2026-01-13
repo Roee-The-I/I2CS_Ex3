@@ -1,5 +1,4 @@
 package assignments.Ex3;
-
 import exe.ex3.game.Game;
 import exe.ex3.game.GhostCL;
 import exe.ex3.game.PacManAlgo;
@@ -69,40 +68,86 @@ public class Ex3Algo implements PacManAlgo{
 		return dirs[ind];
 	}
     public int move(Game game) {
+
+        int[][] map = game.getGame(0);
+        Map2D m = new Map(map);
+
+        Index2D pac = getPacmanIndex(game);
+
+        Index2D target = findClosestFood(m, map, pac);
+        if (target != null) {
+
+            int WALL = Game.getIntColor(Color.BLUE, 0); // או הקבוע שלכם
+            boolean cyclic = false;
+
+            Pixel2D[] path = m.shortestPath(pac, target, WALL, cyclic);
+
+            if (path != null && path.length > 1) {
+                return directionFromTo(pac, (Index2D) path[1]);
+            }
+        }
+
+        return fallbackMove(map, pac);
+    }
+    private Index2D getPacmanIndex(Game game) {
         String pos = game.getPos(0);
         pos = pos.replace("(", "").replace(")", "");
         String[] p = pos.split(",");
         int x = Integer.parseInt(p[0]);
         int y = Integer.parseInt(p[1]);
-        int[][] map = game.getGame(0);
-        int w = map.length;
-        int h = map[0].length;
-        int WALL = Game.getIntColor(Color.BLUE, 0);
+        return new Index2D(x, y);
+    }
+    private Index2D findClosestFood(Map2D m, int[][] map, Index2D pac) {
+
         int FOOD = Game.getIntColor(Color.PINK, 0);
-        if (isValid(game, map, x, y, lastDir, WALL)) {
-            int nx = x, ny = y;
-            if (lastDir == Game.RIGHT) nx++;
-            if (lastDir == Game.LEFT)  nx--;
-            if (lastDir == Game.UP)    ny--;
-            if (lastDir == Game.DOWN)  ny++;
-            if (nx >= 0 && ny >= 0 && nx < w && ny < h && map[nx][ny] == FOOD) {
-                return lastDir;
+        int WALL = Game.getIntColor(Color.BLUE, 0);
+        boolean cyclic = false;
+
+        int bestLen = Integer.MAX_VALUE;
+        Index2D best = null;
+
+        int h = map.length;
+        int w = map[0].length;
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+
+                if (map[y][x] == FOOD) {
+
+                    Index2D food = new Index2D(x, y);
+
+                    Pixel2D[] path = m.shortestPath(pac, food, WALL, cyclic);
+
+                    if (path != null) {
+                        int len = path.length - 1; // מספר צעדים
+                        if (len < bestLen) {
+                            bestLen = len;
+                            best = food;
+                        }
+                    }
+                }
             }
         }
-        int[] dirs = {Game.RIGHT, Game.UP, Game.LEFT, Game.DOWN};
-        for (int dir : dirs) {
-            if (dir == opposite(lastDir)) continue;
-            if (isValid(game, map, x, y, dir, WALL)) {
-                lastDir = dir;
-                return dir;
-            }
-        }
-        for (int dir : dirs) {
-            if (isValid(game, map, x, y, dir, WALL)) {
-                lastDir = dir;
-                return dir;
-            }
-        }
+        return best;
+    }
+    private int directionFromTo(Index2D a, Index2D b) {
+        if (b.getX() > a.getX()) return Game.RIGHT;
+        if (b.getX() < a.getX()) return Game.LEFT;
+        if (b.getY() > a.getY()) return Game.DOWN;
+        if (b.getY() < a.getY()) return Game.UP;
+        return Game.STAY;
+    }
+    private int fallbackMove(int[][] map, Index2D pac) {
+
+        int WALL = Game.getIntColor(Color.BLUE, 0);
+        int x = pac.getX();
+        int y = pac.getY();
+
+        if (x + 1 < map.length && map[x + 1][y] != WALL) return Game.RIGHT;
+        if (y - 1 >= 0 && map[x][y - 1] != WALL) return Game.UP;
+        if (x - 1 >= 0 && map[x - 1][y] != WALL) return Game.LEFT;
+        if (y + 1 < map[0].length && map[x][y + 1] != WALL) return Game.DOWN;
+
         return Game.STAY;
     }
     private boolean isValid(Game game, int[][] map, int x, int y, int dir, int WALL) {
@@ -119,5 +164,17 @@ public class Ex3Algo implements PacManAlgo{
         if (dir == Game.LEFT) return Game.RIGHT;
         if (dir == Game.RIGHT) return Game.LEFT;
         return Game.STAY;
+    }
+    private boolean isWall(int[][] map, int x, int y) {
+        if (x < 0 || y < 0 || x >= map.length || y >= map[0].length) return true;
+        int WALL = Game.getIntColor(java.awt.Color.BLUE, 0);
+        return map[x][y] == WALL;
+    }
+    private int[] nextCell(int x, int y, int dir) {
+        if (dir == Game.RIGHT) return new int[]{x + 1, y};
+        if (dir == Game.LEFT)  return new int[]{x - 1, y};
+        if (dir == Game.UP)    return new int[]{x, y - 1};
+        if (dir == Game.DOWN)  return new int[]{x, y + 1};
+        return new int[]{x, y};
     }
 }
