@@ -57,6 +57,7 @@ public class Ex3Algo implements PacManAlgo {
         double bestScore = Double.NEGATIVE_INFINITY;
         Map2D depthMap = map.allDistance(me, BLUE);
         for (int dir : new int[]{Game.UP, Game.RIGHT, Game.DOWN, Game.LEFT}) {
+            if (steps > 1 && dir == opposite(lastDir)) continue;
             Pixel2D next = NextCell(me, dir, map);
             if (!isValid(next, gameMap)) continue;
             double score = evaluate(next, map, gameMap, danger);
