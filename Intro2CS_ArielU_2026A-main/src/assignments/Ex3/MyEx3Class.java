@@ -11,37 +11,16 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
-/**
- * This is the major algorithmic class for Ex3 - the PacMan game:
- * <p>
- * This code is a very simple example (random-walk algorithm).
- * Your task is to implement (here) your PacMan algorithm.
- */
-public class Ex3Algo implements PacManAlgo {
-    private int _count;
+public class MyEx3Class extends Ex3Algo {
     private int steps;
     private int lastDir = Game.STAY;
-    private Index2D lastPos = null;
-    public int BLUE, PINK, GREEN;
     private Index2D currentTarget = null;
 
-    public Ex3Algo() {
-        _count = 0;
-    }
-
-    @Override
-    /**
-     *  Add a short description for the algorithm as a String.
-     */
-    public String getInfo() {
-        return null;
-    }
-
-    @Override
-    /**
-     * This ia the main method - that you should design, implement and test.
-     */
     public int move(PacmanGame game) {
+        return Move(game);
+    }
+
+    public int Move(PacmanGame game) {
         int[][] gameMap = game.getGame(0);
         Map map = new Map(gameMap);
         map.setCyclic(game.isCyclic());
