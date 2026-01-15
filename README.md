@@ -49,4 +49,4 @@ At each step, Pac-Man:
 ---
 
 ## Author
-Assignment submitted as part of Intro2CS – Ex3.
+Roee Gil
