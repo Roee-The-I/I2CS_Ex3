@@ -55,26 +55,20 @@ public class Map implements Map2D {
 
     @Override
     public void init(int[][] arr) {
-        if (arr == null || arr.length == 0) {
-            throw new RuntimeException("Invalid dimensions");
+        if (arr == null || arr.length == 0 || arr[0] == null || arr[0].length == 0) {
+            throw new RuntimeException("Invalid map");
         }
-        if (arr[0] == null || arr[0].length == 0) {
-            throw new RuntimeException("Invalid array");
-        }
-        int h = arr.length;
-        int w = arr[0].length;
-        int[][] ans = new int[w][h];
-        for (int i = 0; i < w; i++) {
-            if (arr[i] == null || arr[i].length != w) {
-                throw new RuntimeException("Ragged or null row");
+
+        int h = arr.length;        // rows (Y)
+        int w = arr[0].length;     // columns (X)
+
+        this.map = new int[w][h];
+
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                this.map[x][y] = arr[y][x];
             }
         }
-        for (int i = 0; i < w; i++) {
-            for (int j = 0; j < h; j++) {
-                ans[i][j] = arr[i][j];
-            }
-        }
-        this.map = ans;
     }
 
     @Override
@@ -102,14 +96,14 @@ public class Map implements Map2D {
 
     @Override
     public int getPixel(int x, int y) {
-        return this.map[x][y];
+        if (x < 0 || y < 0 || x >= map.length || y >= map[0].length) {
+            return -1;
+        }
+        return map[x][y];
     }
 
     @Override
     public int getPixel(Pixel2D p) {
-        if (p == null) {
-            throw new RuntimeException("Invalid dimensions");
-        }
         return map[p.getX()][p.getY()];
     }
 

@@ -1,146 +1,85 @@
 package assignments.Ex3;
+
 import exe.ex3.game.Game;
 import exe.ex3.game.GhostCL;
 import exe.ex3.game.PacManAlgo;
 import exe.ex3.game.PacmanGame;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * This is the major algorithmic class for Ex3 - the PacMan game:
- *
+ * <p>
  * This code is a very simple example (random-walk algorithm).
  * Your task is to implement (here) your PacMan algorithm.
  */
-public class Ex3Algo implements PacManAlgo{
-	private int _count;
+public class Ex3Algo implements PacManAlgo {
+    private int _count;
+    private int steps;
     private int lastDir = Game.STAY;
-    public Ex3Algo() {_count=0;}
-	@Override
-	/**
-	 *  Add a short description for the algorithm as a String.
-	 */
-	public String getInfo() {
-		return null;
-	}
-	@Override
-	/**
-	 * This ia the main method - that you should design, implement and test.
-	 */
-	public int move(PacmanGame game) {
-		if(_count==0 || _count==300) {
-			int code = 0;
-			int[][] board = game.getGame(0);
-			printBoard(board);
-			int blue = Game.getIntColor(Color.BLUE, code);
-			int pink = Game.getIntColor(Color.PINK, code);
-			int black = Game.getIntColor(Color.BLACK, code);
-			int green = Game.getIntColor(Color.GREEN, code);
-			System.out.println("Blue=" + blue + ", Pink=" + pink + ", Black=" + black + ", Green=" + green);
-			String pos = game.getPos(code).toString();
-			System.out.println("Pacman coordinate: "+pos);
-			GhostCL[] ghosts = game.getGhosts(code);
-			printGhosts(ghosts);
-			int up = Game.UP, left = Game.LEFT, down = Game.DOWN, right = Game.RIGHT;
-		}
-		_count++;
-		int dir = randomDir();
-		return dir;
-	}
-	private static void printBoard(int[][] b) {
-		for(int y =0;y<b[0].length;y++){
-			for(int x =0;x<b.length;x++){
-				int v = b[x][y];
-				System.out.print(v+"\t");
-			}
-			System.out.println();
-		}
-	}
-	private static void printGhosts(GhostCL[] gs) {
-		for(int i=0;i<gs.length;i++){
-			GhostCL g = gs[i];
-			System.out.println(i+") status: "+g.getStatus()+",  type: "+g.getType()+",  pos: "+g.getPos(0)+",  time: "+g.remainTimeAsEatable(0));
-		}
-	}
-	private static int randomDir() {
-		int[] dirs = {Game.UP, Game.LEFT, Game.DOWN, Game.RIGHT};
-		int ind = (int)(Math.random()*dirs.length);
-		return dirs[ind];
-	}
-    public int move(Game game) {
+    private Index2D lastPos = null;
+    public int BLUE, PINK, GREEN;
 
-        int[][] map = game.getGame(0);
-        Map2D m = new Map(map);
+    public Ex3Algo() {
+        _count = 0;
+    }
 
-        Index2D pac = getPacmanIndex(game);
-        Index2D ghost = getGhostIndex(game);
+    @Override
+    /**
+     *  Add a short description for the algorithm as a String.
+     */
+    public String getInfo() {
+        return null;
+    }
 
-        int FOOD = Game.getIntColor(Color.PINK, 0);
-        int WALL = Game.getIntColor(Color.BLUE, 0);
-        boolean cyclic = false;
+    @Override
+    /**
+     * This ia the main method - that you should design, implement and test.
+     */
+    public int move(PacmanGame game) {
+        int[][] gameMap = game.getGame(0);
+        Map map = new Map(gameMap);
+        map.setCyclic(game.isCyclic());
+        Pixel2D me = new Index2D(posToIndex2D(game.getPos(0)));
 
-        int px = pac.getX();
-        int py = pac.getY();
-
-        int gx = ghost.getX();
-        int gy = ghost.getY();
-
-        int h = map.length;
-        int w = map[0].length;
-
-        int[] dx = {0, 1, 0, -1};
-        int[] dy = {-1, 0, 1, 0};
-
-        for (int k = 0; k < 4; k++) {
-            int nx = px + dx[k];
-            int ny = py + dy[k];
-
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-            if (map[ny][nx] == WALL) continue;
-            if (Math.abs(nx - gx) + Math.abs(ny - gy) <= 1) continue;
-
-            if (map[ny][nx] == FOOD) {
-                return directionFromTo(pac, new Index2D(nx, ny));
+        if (steps == 0) {
+            BLUE = Game.getIntColor(Color.BLUE, 0);
+            PINK = Game.getIntColor(Color.PINK, 0);
+            GREEN = Game.getIntColor(Color.GREEN, 0);
+        }
+        GhostCL[] ghosts = game.getGhosts(0);
+        double[][] danger = CreateDangerMap(map, ghosts);
+        int bestDir = Game.STAY;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        Map2D depthMap = map.allDistance(me, BLUE);
+        for (int dir : new int[]{Game.UP, Game.RIGHT, Game.DOWN, Game.LEFT}) {
+            Pixel2D next = NextCell(me, dir, map);
+            if (!isValid(next, gameMap)) continue;
+            double score = evaluate(next, map, gameMap, danger);
+            double future = depthMap.getPixel(next.getX(), next.getY());
+            if (future != -1) score += 0.3 * future;
+            if (dir == lastDir) score += 20;
+            if (score > bestScore) {
+                bestScore = score;
+                bestDir = dir;
             }
         }
-
-        Map2D distFromPac = m.allDistance(pac, WALL, cyclic);
-
-        Index2D target = null;
-        int bestDist = Integer.MAX_VALUE;
-
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
-                if (map[y][x] == FOOD) {
-                    int d = distFromPac.getPixel(x, y);
-                    if (d >= 0 && d < bestDist) {
-                        bestDist = d;
-                        target = new Index2D(x, y);
-                    }
+        if (bestDir == Game.STAY) {
+            for (int d : new int[]{Game.UP, Game.RIGHT, Game.DOWN, Game.LEFT}) {
+                if (isValid(NextCell(me, d, map), gameMap)) {
+                    bestDir = d;
+                    break;
                 }
             }
         }
 
-        if (target == null) return 0;
-
-        Map2D distFromFood = m.allDistance(target, WALL, cyclic);
-        int curDist = distFromFood.getPixel(px, py);
-
-        for (int k = 0; k < 4; k++) {
-            int nx = px + dx[k];
-            int ny = py + dy[k];
-
-            if (nx < 0 || nx >= w || ny < 0 || ny >= h) continue;
-            if (map[ny][nx] == WALL) continue;
-            if (Math.abs(nx - gx) + Math.abs(ny - gy) <= 1) continue;
-
-            int nd = distFromFood.getPixel(nx, ny);
-            if (nd >= 0 && nd < curDist) {
-                return directionFromTo(pac, new Index2D(nx, ny));
-            }
-        }
-
-        return 0;
+        lastDir = bestDir;
+        steps++;
+        return bestDir;
     }
     private Index2D getPacmanIndex(Game game) {
         String pos = game.getPos(0);
@@ -150,6 +89,7 @@ public class Ex3Algo implements PacManAlgo{
         int y = Integer.parseInt(p[1]);
         return new Index2D(x, y);
     }
+
     private Index2D getGhostIndex(Game game) {
 
         GhostCL[] gs = game.getGhosts(0);
@@ -168,6 +108,103 @@ public class Ex3Algo implements PacManAlgo{
 
         return new Index2D(x, y);
     }
+    public double evaluate(Pixel2D pos, Map map, int[][] gamemap, double[][] danger) {
+        double score = 0;
+        int x = pos.getX(), y = pos.getY();
+        double ghostDist = danger[x][y];
+
+        if (ghostDist <= 1.1) return -10000000.0;
+        if (ghostDist <= 2.1) score -= 500000.0;
+        if (ghostDist <= 3.1) score -= 100000.0;
+
+        int safeSpace = countSafeSpace(pos, map, gamemap, danger, 15);
+        score += safeSpace * 2000;
+
+        Map2D distMap = map.allDistance(pos, BLUE);
+        Pixel2D pink = Close(gamemap, distMap, PINK);
+
+        if (pink != null) {
+            double d = distMap.getPixel(pink.getX(), pink.getY());
+            score += 200000.0 / (d + 1);
+        } else {
+            score += ghostDist * 5000;
+        }
+
+        if (gamemap[x][y] == PINK) score += 10000;
+
+        return score;
+    }
+    public int countSafeSpace(Pixel2D start, Map map, int[][] board, double[][] danger, int limit) {
+        Queue<Pixel2D> q = new LinkedList<>();
+        java.util.Map<String, Integer> dist = new HashMap<>();
+        q.add(start);
+        dist.put(Cell(start), 0);
+        int count = 0;
+        while (!q.isEmpty() && count < limit) {
+            Pixel2D cur = q.poll();
+            int d = dist.get(Cell(cur));
+            count++;
+            for (int dir : new int[]{0,1,2,3}) {
+                Pixel2D n = nextCell(cur, map.getMap(), dir);
+                if (!isValid(n, board) || dist.containsKey(Cell(n))) continue;
+                if (danger[n.getX()][n.getY()] <= d + 1) continue;
+                dist.put(Cell(n), d + 1);
+                q.add(n);
+            }
+        }
+        return count;
+    }
+
+    public double[][] CreateDangerMap(Map map, GhostCL[] ghosts) {
+        int w = map.getMap().length, h = map.getMap()[0].length;
+        double[][] danger = new double[w][h];
+        for (double[] r : danger) Arrays.fill(r, 99.0);
+
+        if (ghosts != null && ghosts.length > 0) {
+            for (int i = 0; i < ghosts.length; i++) {
+                if (ghosts[i].remainTimeAsEatable(i) > 3.0) continue;
+                Pixel2D gp = new Index2D(posToIndex2D(ghosts[i].getPos(i)));
+                Map2D dist = map.allDistance(gp, BLUE);
+                for (int x = 0; x < w; x++) {
+                    for (int y = 0; y < h; y++) {
+                        double d = dist.getPixel(x, y);
+                        if (d != -1) danger[x][y] = Math.min(danger[x][y], d);
+                    }
+                }
+            }
+        } else {
+            for (int x = 0; x < w; x++) {
+                for (int y = 0; y < h; y++) {
+                    if (map.getMap()[x][y] < 0) {
+                        danger[x][y] = 0;
+                    }
+                }
+            }
+        }
+
+        return danger;
+    }
+
+    private Index2D posToIndex2D(String pos) {
+        if (pos == null) return null;
+
+        pos = pos.replace("(", "").replace(")", "");
+        String[] parts = pos.split(",");
+
+        int x = Integer.parseInt(parts[0].trim());
+        int y = Integer.parseInt(parts[1].trim());
+
+        return new Index2D(x, y);
+    }
+    public Pixel2D Close(int[][] map, Map2D dist, int color) {
+        Pixel2D best = null; double min = Double.MAX_VALUE;
+        for (int i = 0; i < map.length; i++)
+            for (int j = 0; j < map[0].length; j++)
+                if (map[i][j] == color && dist.getPixel(i, j) != -1 && dist.getPixel(i, j) < min) {
+                    min = dist.getPixel(i, j); best = new Index2D(i, j);
+                }
+        return best;
+    }
     private Index2D findClosestFood(Map2D m, int[][] map, Index2D pac) {
 
         int FOOD = Game.getIntColor(Color.PINK, 0);
@@ -183,14 +220,14 @@ public class Ex3Algo implements PacManAlgo{
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
 
-                if (map[y][x] == FOOD) {
+                if (map[x][y] == FOOD) {
 
                     Index2D food = new Index2D(x, y);
 
                     Pixel2D[] path = m.shortestPath(pac, food, WALL, cyclic);
 
                     if (path != null) {
-                        int len = path.length - 1; // מספר צעדים
+                        int len = path.length - 1;
                         if (len < bestLen) {
                             bestLen = len;
                             best = food;
@@ -201,6 +238,7 @@ public class Ex3Algo implements PacManAlgo{
         }
         return best;
     }
+
     private int directionFromTo(Index2D a, Index2D b) {
         if (b.getX() > a.getX()) return Game.RIGHT;
         if (b.getX() < a.getX()) return Game.LEFT;
@@ -208,44 +246,56 @@ public class Ex3Algo implements PacManAlgo{
         if (b.getY() < a.getY()) return Game.UP;
         return Game.STAY;
     }
-    private int fallbackMove(int[][] map, Index2D pac) {
 
-        int WALL = Game.getIntColor(Color.BLUE, 0);
-        int x = pac.getX();
-        int y = pac.getY();
 
-        if (x + 1 < map.length && map[x + 1][y] != WALL) return Game.RIGHT;
-        if (y - 1 >= 0 && map[x][y - 1] != WALL) return Game.UP;
-        if (x - 1 >= 0 && map[x - 1][y] != WALL) return Game.LEFT;
-        if (y + 1 < map[0].length && map[x][y + 1] != WALL) return Game.DOWN;
-
-        return Game.STAY;
+    private boolean isValid(Pixel2D p, int[][] board) {
+        if (p.getX() < 0 || p.getX() >= board.length || p.getY() < 0 || p.getY() >= board[0].length) return false;
+        return board[p.getX()][p.getY()] != BLUE && !GhostArea(p, board);
     }
-    private boolean isValid(Game game, int[][] map, int x, int y, int dir, int WALL) {
-        int newx = x, newy = y;
-        if (dir == Game.RIGHT) newx++;
-        if (dir == Game.LEFT)  newx--;
-        if (dir == Game.UP)    newy--;
-        if (dir == Game.DOWN)  newy++;
-        return newx >= 0 && newy >= 0 && newx < map.length && newy < map[0].length && map[newx][newy] != WALL;
-    }
+
     private int opposite(int dir) {
-        if (dir == Game.UP) return Game.DOWN;
-        if (dir == Game.DOWN) return Game.UP;
-        if (dir == Game.LEFT) return Game.RIGHT;
-        if (dir == Game.RIGHT) return Game.LEFT;
-        return Game.STAY;
+            if (dir == Game.UP) return Game.DOWN;
+            if (dir == Game.DOWN) return Game.UP;
+            if (dir == Game.LEFT) return Game.RIGHT;
+            if (dir == Game.RIGHT) return Game.LEFT;
+            return Game.STAY;
     }
+
+    public Pixel2D NextCell(Pixel2D p, int dir, Map map) {
+        int x = p.getX(), y = p.getY();
+        if (dir == Game.UP) y++;
+        else if (dir == Game.DOWN) y--;
+        else if (dir == Game.LEFT) x--;
+        else if (dir == Game.RIGHT) x++;
+        int w = map.getMap().length, h = map.getMap()[0].length;
+        return new Index2D((x + w) % w, (y + h) % h);
+    }
+    public String Cell(Pixel2D p) { return p.getX() + "," + p.getY(); }
+
+
     private boolean isWall(int[][] map, int x, int y) {
         if (x < 0 || y < 0 || x >= map.length || y >= map[0].length) return true;
         int WALL = Game.getIntColor(java.awt.Color.BLUE, 0);
         return map[x][y] == WALL;
     }
-    private int[] nextCell(int x, int y, int dir) {
-        if (dir == Game.RIGHT) return new int[]{x + 1, y};
-        if (dir == Game.LEFT)  return new int[]{x - 1, y};
-        if (dir == Game.UP)    return new int[]{x, y - 1};
-        if (dir == Game.DOWN)  return new int[]{x, y + 1};
-        return new int[]{x, y};
+
+    private Pixel2D nextCell(Pixel2D pixel, int[][] map, int dir) {
+        int x = pixel.getX();
+        int y = pixel.getY();
+
+        if (dir == Game.RIGHT) x++;
+        if (dir == Game.LEFT) x--;
+        if (dir == Game.UP) y--;
+        if (dir == Game.DOWN) y++;
+
+        int w = map.length;
+        int h = map[0].length;
+
+        return new Index2D(Math.floorMod(x, w), Math.floorMod(y, h));
+    }
+
+    private boolean GhostArea(Pixel2D p, int[][] map) {
+        int mx = map.length / 2, my = map[0].length / 2;
+        return Math.abs(p.getX() - mx) < 3 && Math.abs(p.getY() - my) < 3 && map[p.getX()][p.getY()] == 0;
     }
 }
