@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="I2CS_Ex3">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/Intro2CS_ArielU_2026A-main/src" />
+      <root url="file://$PROJECT_DIR$/Intro2CS_ArielU_2026A-main/tests" />
+    </SOURCES>
+  </library>
+</component>

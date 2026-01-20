@@ -17,7 +17,7 @@ public class MyPackman {
     public int BLUE, PINK, GREEN;
     private Index2D currentTarget = null;
     private int lastDir = -1;
-
+    private Pixel2D prevPrevPos = null;
     public double evaluate(Pixel2D pos, Map2D map, double[][] dangerMap, boolean isSuper) {
         double score = 0;
         double distToGhost = dangerMap[pos.getX()][pos.getY()];
@@ -44,6 +44,7 @@ public class MyPackman {
     }
 
     public int[] Move(int curRow, int curCol, Map2D map, List ghosts, boolean isSuper) {
+        Pixel2D prev = lastPos;
         Pixel2D me = new Index2D(curRow, curCol);
         double[][] dangerMap = buildDangerMap(map, ghosts);
 
@@ -52,7 +53,9 @@ public class MyPackman {
 
         for (int dir = 0; dir < 4; dir++) {
             Pixel2D next = getCell(me, dir, map);
-            if (map.getPixel(next.getX(), next.getY()) == 1) continue;
+            if (next.getX() == me.getX() && next.getY() == me.getY()) continue;
+            if (map.getPixel(next.getY(), next.getX()) == 1) continue;
+            if (dir == opposite(lastDir)) continue;
 
             double score = evaluate(next, map, dangerMap, isSuper);
             if (dir == lastDir) score += 20;
@@ -68,6 +71,21 @@ public class MyPackman {
             Pixel2D finalPos = getCell(me, bestDir, map);
             return new int[]{finalPos.getX(), finalPos.getY()};
         }
+        for (int dir = 0; dir < 4; dir++) {
+            if (lastDir != -1 && dir == opposite(lastDir)) continue;
+            Pixel2D next = getCell(me, dir, map);
+            if (next.getX() != me.getX() || next.getY() != me.getY()) {
+                lastDir = dir;
+                return new int[]{next.getX(), next.getY()};
+            }
+            if (prevPrevPos != null &&
+                    next.getX() == prevPrevPos.getX() &&
+                    next.getY() == prevPrevPos.getY()) {
+                continue;
+            }
+        }
+        prevPrevPos = lastPos;
+        lastPos = new Index2D(curRow, curCol);
         return new int[]{curRow, curCol};
     }
 
@@ -77,8 +95,16 @@ public class MyPackman {
         else if (dir == 1) c++;
         else if (dir == 2) r++;
         else if (dir == 3) c--;
-        int h = map.getHeight(), w = map.getWidth();
-        return new Index2D((r + h) % h, (c + w) % w);
+        if (r < 0 || r >= map.getHeight() || c < 0 || c >= map.getWidth()) {
+            return p;
+        }
+        if (map.getPixel(c, r) == 1) {
+            return p;
+        }
+        return new Index2D(r, c);
+    }
+    private int opposite(int dir) {
+        return (dir + 2) % 4;
     }
 
     public Pixel2D Close(int[][] map, Map2D dist, int color) {

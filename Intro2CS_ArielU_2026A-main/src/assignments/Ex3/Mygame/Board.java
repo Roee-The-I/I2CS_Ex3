@@ -36,21 +36,24 @@ public class Board {
                 double y = 1 - (i * cellHeight + cellHeight / 2);
 
                 switch (grid[i][j]) {
-                    case 0:
-                        StdDraw.setPenColor(Color.BLACK);
+                    case 0: // empty
+                        StdDraw.setPenColor(new Color(20, 20, 20)); // שחור רך
                         StdDraw.filledSquare(x, y, cellWidth / 2);
                         break;
+
                     case 1: // wall
-                        StdDraw.setPenColor(Color.BLUE);
+                        StdDraw.setPenColor(new Color(0, 70, 160)); // כחול עמוק
                         StdDraw.filledSquare(x, y, cellWidth / 2);
                         break;
+
                     case 2: // food
-                        StdDraw.setPenColor(Color.YELLOW);
-                        StdDraw.filledCircle(x, y, Math.min(cellWidth, cellHeight) * 0.1);
+                        StdDraw.setPenColor(new Color(255, 220, 120)); // צהוב רך
+                        StdDraw.filledCircle(x, y, Math.min(cellWidth, cellHeight) * 0.12);
                         break;
+
                     case 3: // fruit
-                        StdDraw.setPenColor(Color.ORANGE);
-                        StdDraw.filledCircle(x, y, Math.min(cellWidth, cellHeight) * 0.25);
+                        StdDraw.setPenColor(new Color(255, 100, 0)); // כתום חזק
+                        StdDraw.filledCircle(x, y, Math.min(cellWidth, cellHeight) * 0.28);
                         break;
                 }
 
