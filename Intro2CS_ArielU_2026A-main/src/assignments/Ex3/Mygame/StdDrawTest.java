@@ -1,4 +1,4 @@
-package assignments.Ex2;
+package assignments.Ex3.Mygame;
 
 /** This is NOT a Junit class - as it tests GUI components which
  * should not be tested using Junit.

@@ -1,4 +1,4 @@
-package assignments.Ex2;
+package assignments.Ex3.Mygame;
 
 //package stdDraw;
 // https://introcs.cs.princeton.edu/java/stdlib/StdDraw.java.html
